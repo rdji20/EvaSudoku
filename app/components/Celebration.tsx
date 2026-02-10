@@ -69,7 +69,7 @@ export default function Celebration({ elapsed, player, onNewGame }: CelebrationP
       {player === 'Eva' ? (
         <div className={`relative rounded-2xl shadow-2xl mx-4 max-w-xs w-full overflow-hidden
           transition-all duration-500 ${visible ? 'scale-100 translate-y-0' : 'scale-90 translate-y-4'}`}>
-          <img src="/tulip.png" alt="Tulip" className="w-full aspect-square object-contain" />
+          <img src="/EvaSudoku/tulip.png" alt="Tulip" className="w-full aspect-square object-contain" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
             <h2 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
