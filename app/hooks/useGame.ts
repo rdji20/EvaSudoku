@@ -35,6 +35,7 @@ export interface UseGameReturn {
   undo: () => void;
   redo: () => void;
   newGame: () => void;
+  fillSolution: () => void;
   goHome: () => void;
   startGame: (player: string) => void;
   resumeGame: () => void;
@@ -194,6 +195,14 @@ export function useGame(): UseGameReturn {
     generateNewGame(player);
   }, [generateNewGame, player]);
 
+  const fillSolution = useCallback(() => {
+    setGameState(prev => {
+      const newValue = solution.map((s, i) => prev.given[i] ? 0 : s);
+      setHistory(h => pushHistory(h, newValue, prev.notes));
+      return { ...prev, value: newValue, notes: new Array(81).fill(0), solved: true };
+    });
+  }, [solution]);
+
   const selectCell = useCallback((index: number) => {
     setGameState(prev => ({ ...prev, selected: index }));
   }, []);
@@ -294,6 +303,7 @@ export function useGame(): UseGameReturn {
     undo,
     redo,
     newGame,
+    fillSolution,
     goHome,
     startGame,
     resumeGame,

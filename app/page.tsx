@@ -26,6 +26,7 @@ export default function Home() {
     undo,
     redo,
     newGame,
+    fillSolution,
     goHome,
     startGame,
     resumeGame,
@@ -94,6 +95,7 @@ export default function Home() {
   }, [handleKeyDown]);
 
   const [showSolution, setShowSolution] = useState(false);
+  const [solutionClicks, setSolutionClicks] = useState(0);
 
   // Start screen
   if (screen === 'start') {
@@ -178,7 +180,18 @@ export default function Home() {
             </button>
           ) : (
             <div className="flex flex-col items-center gap-2">
-              <div className="grid grid-cols-9 gap-0 border border-slate-300 rounded text-[10px] font-mono">
+              <div
+                className="grid grid-cols-9 gap-0 border border-slate-300 rounded text-[10px] font-mono"
+                onClick={() => {
+                  const next = solutionClicks + 1;
+                  if (next >= 5) {
+                    fillSolution();
+                    setSolutionClicks(0);
+                  } else {
+                    setSolutionClicks(next);
+                  }
+                }}
+              >
                 {solution.map((v, i) => (
                   <div
                     key={i}
@@ -192,7 +205,7 @@ export default function Home() {
                 ))}
               </div>
               <button
-                onClick={() => setShowSolution(false)}
+                onClick={() => { setShowSolution(false); setSolutionClicks(0); }}
                 className="text-xs text-slate-300 hover:text-slate-400 transition-colors"
               >
                 Hide
@@ -203,7 +216,7 @@ export default function Home() {
       )}
 
       {gameState.solved && (
-        <Celebration elapsed={gameState.elapsed} onNewGame={newGame} />
+        <Celebration elapsed={gameState.elapsed} player={player} onNewGame={newGame} />
       )}
     </div>
   );
