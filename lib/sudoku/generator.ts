@@ -13,15 +13,32 @@ export function generateHardPuzzle(
   targetClues = 28,
   maxAttempts = 50
 ): { puzzle: Grid; solution: Grid } | null {
+  return generatePuzzle(targetClues, maxAttempts, true);
+}
+
+// Generate an easy puzzle with more clues and no hard-mode filter
+export function generateEasyPuzzle(
+  targetClues = 40,
+  maxAttempts = 50
+): { puzzle: Grid; solution: Grid } | null {
+  return generatePuzzle(targetClues, maxAttempts, false);
+}
+
+function generatePuzzle(
+  targetClues: number,
+  maxAttempts: number,
+  requireHard: boolean
+): { puzzle: Grid; solution: Grid } | null {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const result = tryGeneratePuzzle(targetClues);
+    const result = tryGeneratePuzzle(targetClues, requireHard);
     if (result) return result;
   }
   return null;
 }
 
 function tryGeneratePuzzle(
-  targetClues: number
+  targetClues: number,
+  requireHard: boolean
 ): { puzzle: Grid; solution: Grid } | null {
   const solution = generateSolvedGrid();
   const puzzle = [...solution];
@@ -50,9 +67,11 @@ function tryGeneratePuzzle(
   // Reject if we couldn't remove enough clues
   if (clueCount > targetClues + 2) return null;
 
-  // Hardness check: reject if logic-only (naked + hidden singles) solves it
-  const { solved: tooEasy } = logicOnlySolve(puzzle);
-  if (tooEasy) return null;
+  if (requireHard) {
+    // Hardness check: reject if logic-only (naked + hidden singles) solves it
+    const { solved: tooEasy } = logicOnlySolve(puzzle);
+    if (tooEasy) return null;
+  }
 
   return { puzzle, solution };
 }

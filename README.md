@@ -1,10 +1,10 @@
 # Eva Sudoku
 
-A hard-only Sudoku puzzle game built with Next.js. Every puzzle is algorithmically generated with a guaranteed unique solution and verified to require advanced solving techniques.
+A Sudoku puzzle game built with Next.js. Puzzles are algorithmically generated with a guaranteed unique solution, with selectable easy or hard difficulty.
 
 ## Features
 
-- **Hard puzzles only** — every puzzle requires more than naked/hidden singles to solve
+- **Difficulty selection** — choose Easy or Hard before starting a game
 - **Unique solution guarantee** — verified via solution counting (stops at 2)
 - **Two player modes** — Eva (password-protected) and Guest
 - **Notes mode** — toggle with N key, pencil marks as mini-grid
@@ -26,7 +26,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Deployment
 
-Deployed on Vercel. Push to `main` to trigger auto-deploy.
+Deployed on GitHub Pages. Push to `main` and GitHub updates the live site automatically.
 
 ## Tech Stack
 

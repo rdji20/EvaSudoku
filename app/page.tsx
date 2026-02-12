@@ -13,6 +13,7 @@ export default function Home() {
   const {
     screen,
     player,
+    difficulty,
     gameState,
     conflicts,
     history,
@@ -31,6 +32,7 @@ export default function Home() {
     startGame,
     resumeGame,
   } = useGame();
+  const difficultyLabel = difficulty === 'easy' ? 'Easy' : 'Hard';
 
   // Keyboard input (only when playing)
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -132,7 +134,7 @@ export default function Home() {
         </button>
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Sudoku</h1>
         <p className="text-xs text-slate-400 mt-0.5 tracking-wide uppercase">
-          Hard &middot; {player}
+          {difficultyLabel} &middot; {player}
         </p>
       </header>
 
@@ -216,7 +218,12 @@ export default function Home() {
       )}
 
       {gameState.solved && (
-        <Celebration elapsed={gameState.elapsed} player={player} onNewGame={newGame} />
+        <Celebration
+          elapsed={gameState.elapsed}
+          player={player}
+          difficulty={difficulty}
+          onNewGame={newGame}
+        />
       )}
     </div>
   );

@@ -47,10 +47,11 @@ The solver picks the empty cell with the **fewest candidates** (Minimum Remainin
 
 1. **Generate a solved grid** — solve an empty 81-cell grid with randomized candidate order
 2. **Remove clues** — shuffle all 81 indices, try removing each one; revert if uniqueness breaks
-3. **Hardness filter** — run a logic-only solver (naked singles + hidden singles only); if it solves the puzzle completely, reject it as too easy
-4. Target ~28 clues. Fallback to ~30 if generation is struggling.
+3. **Difficulty behavior**
+   - **Easy**: keep more clues (around 40+), no hard-mode filter
+   - **Hard**: target fewer clues (around 28-30) and run a logic-only filter; if naked/hidden singles solve it fully, reject as too easy
 
-This produces puzzles that require techniques beyond basic singles (pairs, box/line interactions, etc.) without needing a full human-strategy engine.
+Both modes preserve uniqueness, while hard mode specifically pushes puzzles beyond basic singles without requiring a full human-strategy engine.
 
 ### State Management: Single `useGame` Hook
 
@@ -64,7 +65,7 @@ Every user action (digit entry, erase, note toggle) is a pure function that prod
 
 ### Persistence
 
-A `PersistedState` object (given, value, notes, solution, elapsed, history, player) is saved to `localStorage` on every change. On load, the start screen checks for a saved game and offers a "Continue" option.
+A `PersistedState` object (given, value, notes, solution, elapsed, history, player, difficulty) is saved to `localStorage` on every change. On load, the start screen checks for a saved game and offers a "Continue" option.
 
 ### Player System
 

@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Difficulty } from '@/lib/sudoku';
 
 interface StartScreenProps {
   hasSavedGame: boolean;
   savedPlayer: string | null;
-  onStart: (player: string) => void;
+  onStart: (player: string, difficulty: Difficulty) => void;
   onResume: () => void;
 }
 
@@ -13,6 +14,7 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
   const [showPassword, setShowPassword] = useState<false | 'new' | 'resume'>(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [difficulty, setDifficulty] = useState<Difficulty>('hard');
 
   function handleEvaClick() {
     setShowPassword('new');
@@ -36,7 +38,7 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
       if (showPassword === 'resume') {
         onResume();
       } else {
-        onStart('Eva');
+        onStart('Eva', difficulty);
       }
     } else {
       setError(true);
@@ -49,7 +51,9 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
         {/* Title */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-slate-800 tracking-tight">Sudoku</h1>
-          <p className="text-sm text-slate-400 mt-1 tracking-wide uppercase">Hard mode</p>
+          <p className="text-sm text-slate-400 mt-1 tracking-wide uppercase">
+            {difficulty === 'easy' ? 'Easy mode' : 'Hard mode'}
+          </p>
         </div>
 
         {/* Mini decorative grid */}
@@ -61,6 +65,31 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
 
         {/* Player buttons / password prompt */}
         <div className="w-full flex flex-col gap-3">
+          <p className="text-center text-xs text-slate-400 font-medium tracking-wide uppercase">Difficulty</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              aria-pressed={difficulty === 'easy'}
+              onClick={() => setDifficulty('easy')}
+              className="w-full py-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none"
+              style={difficulty === 'easy'
+                ? { backgroundColor: '#8b5cf6', color: '#ffffff' }
+                : { backgroundColor: '#e2e8f0', color: '#334155' }}
+            >
+              Easy
+            </button>
+            <button
+              type="button"
+              aria-pressed={difficulty === 'hard'}
+              onClick={() => setDifficulty('hard')}
+              className="w-full py-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none"
+              style={difficulty === 'hard'
+                ? { backgroundColor: '#8b5cf6', color: '#ffffff' }
+                : { backgroundColor: '#e2e8f0', color: '#334155' }}
+            >
+              Hard
+            </button>
+          </div>
           <p className="text-center text-sm text-slate-500 font-medium">Who&apos;s playing?</p>
 
           {!showPassword ? (
@@ -77,7 +106,7 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
               </button>
 
               <button
-                onClick={() => onStart('Guest')}
+                onClick={() => onStart('Guest', difficulty)}
                 className="w-full py-4 px-6 rounded-xl font-semibold text-lg
                   text-slate-700 bg-white border border-slate-200
                   hover:bg-slate-50 active:bg-slate-100

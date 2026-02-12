@@ -2,9 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
+  Difficulty,
   GameState,
   HistoryState,
   PersistedState,
+  generateEasyPuzzle,
   getConflicts,
   isSolved,
   generateHardPuzzle,
@@ -22,6 +24,7 @@ export type Screen = 'start' | 'loading' | 'playing';
 export interface UseGameReturn {
   screen: Screen;
   player: string;
+  difficulty: Difficulty;
   gameState: GameState;
   conflicts: boolean[];
   history: HistoryState;
@@ -37,7 +40,7 @@ export interface UseGameReturn {
   newGame: () => void;
   fillSolution: () => void;
   goHome: () => void;
-  startGame: (player: string) => void;
+  startGame: (player: string, difficulty: Difficulty) => void;
   resumeGame: () => void;
 }
 
@@ -64,6 +67,7 @@ const emptyState: GameState = {
 export function useGame(): UseGameReturn {
   const [screen, setScreen] = useState<Screen>('start');
   const [player, setPlayer] = useState('');
+  const [difficulty, setDifficulty] = useState<Difficulty>('hard');
   const [gameState, setGameState] = useState<GameState>(emptyState);
   const [solution, setSolution] = useState<number[]>(new Array(81).fill(0));
   const [history, setHistory] = useState<HistoryState>(
@@ -114,12 +118,14 @@ export function useGame(): UseGameReturn {
       elapsed: gameState.elapsed,
       history,
       player,
+      difficulty,
     });
-  }, [screen, gameState.given, gameState.value, gameState.notes, gameState.elapsed, solution, history, player]);
+  }, [screen, gameState.given, gameState.value, gameState.notes, gameState.elapsed, solution, history, player, difficulty]);
 
   const loadFromSaved = useCallback((saved: PersistedState) => {
     const solved = isSolved(saved.given, saved.value);
     setPlayer(saved.player);
+    setDifficulty(saved.difficulty ?? 'hard');
     setGameState({
       given: saved.given,
       value: saved.value,
@@ -139,12 +145,14 @@ export function useGame(): UseGameReturn {
     setScreen('playing');
   }, []);
 
-  const generateNewGame = useCallback((forPlayer: string) => {
+  const generateNewGame = useCallback((forPlayer: string, forDifficulty: Difficulty) => {
     setScreen('loading');
     setPlayer(forPlayer);
+    setDifficulty(forDifficulty);
     setTimeout(() => {
-      const result = generateHardPuzzle(28, 100);
-      const final = result || generateHardPuzzle(30, 200);
+      const final = forDifficulty === 'easy'
+        ? (generateEasyPuzzle(40, 100) || generateEasyPuzzle(42, 200))
+        : (generateHardPuzzle(28, 100) || generateHardPuzzle(30, 200));
       if (final) {
         const { puzzle, solution: sol } = final;
         const emptyValue = new Array(81).fill(0);
@@ -176,9 +184,9 @@ export function useGame(): UseGameReturn {
   }, []);
 
   // Start a fresh game for a player
-  const startGame = useCallback((selectedPlayer: string) => {
+  const startGame = useCallback((selectedPlayer: string, selectedDifficulty: Difficulty) => {
     clearGame();
-    generateNewGame(selectedPlayer);
+    generateNewGame(selectedPlayer, selectedDifficulty);
   }, [generateNewGame]);
 
   // Resume an existing saved game
@@ -192,8 +200,8 @@ export function useGame(): UseGameReturn {
   // New game while already playing (keeps current player)
   const newGame = useCallback(() => {
     clearGame();
-    generateNewGame(player);
-  }, [generateNewGame, player]);
+    generateNewGame(player, difficulty);
+  }, [generateNewGame, player, difficulty]);
 
   const fillSolution = useCallback(() => {
     setGameState(prev => {
@@ -290,6 +298,7 @@ export function useGame(): UseGameReturn {
   return {
     screen,
     player,
+    difficulty,
     gameState,
     conflicts,
     history,
