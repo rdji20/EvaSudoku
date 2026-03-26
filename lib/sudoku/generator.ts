@@ -16,6 +16,16 @@ export function generateHardPuzzle(
   return generatePuzzle(targetClues, maxAttempts, true);
 }
 
+// Generate a medium puzzle
+// Returns { puzzle, solution } or null if generation fails
+export function generateMediumPuzzle(
+  targetClues = 34,
+  maxAttempts = 50
+): { puzzle: Grid; solution: Grid } | null {
+  // Same "not-only-singles" filter as hard, but with more clues.
+  return generatePuzzle(targetClues, maxAttempts, true);
+}
+
 // Generate an easy puzzle with more clues and no hard-mode filter
 export function generateEasyPuzzle(
   targetClues = 40,

@@ -3,7 +3,7 @@
 export type Grid = number[]; // length 81, 0 = empty, 1-9 = filled
 
 export type Notes = number[]; // length 81, bitmask of candidates (bits 1..9)
-export type Difficulty = 'easy' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface GameState {
   given: number[];    // immutable clues (0 = not a clue)

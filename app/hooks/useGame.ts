@@ -7,6 +7,7 @@ import {
   HistoryState,
   PersistedState,
   generateEasyPuzzle,
+  generateMediumPuzzle,
   getConflicts,
   isSolved,
   generateHardPuzzle,
@@ -67,7 +68,7 @@ const emptyState: GameState = {
 export function useGame(): UseGameReturn {
   const [screen, setScreen] = useState<Screen>('start');
   const [player, setPlayer] = useState('');
-  const [difficulty, setDifficulty] = useState<Difficulty>('hard');
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [gameState, setGameState] = useState<GameState>(emptyState);
   const [solution, setSolution] = useState<number[]>(new Array(81).fill(0));
   const [history, setHistory] = useState<HistoryState>(
@@ -152,7 +153,9 @@ export function useGame(): UseGameReturn {
     setTimeout(() => {
       const final = forDifficulty === 'easy'
         ? (generateEasyPuzzle(40, 100) || generateEasyPuzzle(42, 200))
-        : (generateHardPuzzle(28, 100) || generateHardPuzzle(30, 200));
+        : forDifficulty === 'medium'
+          ? (generateMediumPuzzle(34, 100) || generateMediumPuzzle(36, 200))
+          : (generateHardPuzzle(28, 100) || generateHardPuzzle(30, 200));
       if (final) {
         const { puzzle, solution: sol } = final;
         const emptyValue = new Array(81).fill(0);

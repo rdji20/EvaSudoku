@@ -14,7 +14,7 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
   const [showPassword, setShowPassword] = useState<false | 'new' | 'resume'>(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
-  const [difficulty, setDifficulty] = useState<Difficulty>('hard');
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
 
   function handleEvaClick() {
     setShowPassword('new');
@@ -52,7 +52,7 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
         <div className="text-center">
           <h1 className="text-4xl font-bold text-slate-800 tracking-tight">Sudoku</h1>
           <p className="text-sm text-slate-400 mt-1 tracking-wide uppercase">
-            {difficulty === 'easy' ? 'Easy mode' : 'Hard mode'}
+            {difficulty === 'easy' ? 'Easy mode' : difficulty === 'medium' ? 'Medium mode' : 'Hard mode'}
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
         {/* Player buttons / password prompt */}
         <div className="w-full flex flex-col gap-3">
           <p className="text-center text-xs text-slate-400 font-medium tracking-wide uppercase">Difficulty</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               aria-pressed={difficulty === 'easy'}
@@ -77,6 +77,17 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
                 : { backgroundColor: '#e2e8f0', color: '#334155' }}
             >
               Easy
+            </button>
+            <button
+              type="button"
+              aria-pressed={difficulty === 'medium'}
+              onClick={() => setDifficulty('medium')}
+              className="w-full py-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none"
+              style={difficulty === 'medium'
+                ? { backgroundColor: '#8b5cf6', color: '#ffffff' }
+                : { backgroundColor: '#e2e8f0', color: '#334155' }}
+            >
+              Medium
             </button>
             <button
               type="button"

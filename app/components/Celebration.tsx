@@ -28,7 +28,7 @@ interface Particle {
 export default function Celebration({ elapsed, player, difficulty, onNewGame }: CelebrationProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [visible, setVisible] = useState(false);
-  const difficultyLabel = difficulty === 'easy' ? 'Easy' : 'Hard';
+  const difficultyLabel = difficulty === 'easy' ? 'Easy' : difficulty === 'medium' ? 'Medium' : 'Hard';
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
   useEffect(() => {

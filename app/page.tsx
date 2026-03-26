@@ -32,7 +32,7 @@ export default function Home() {
     startGame,
     resumeGame,
   } = useGame();
-  const difficultyLabel = difficulty === 'easy' ? 'Easy' : 'Hard';
+  const difficultyLabel = difficulty === 'easy' ? 'Easy' : difficulty === 'medium' ? 'Medium' : 'Hard';
 
   // Keyboard input (only when playing)
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
