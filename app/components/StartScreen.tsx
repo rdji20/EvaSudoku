@@ -11,11 +11,17 @@ interface StartScreenProps {
   onResume: () => void;
 }
 
+type MobileTab = 'sky' | 'sudoku';
+
+/** Solid pink (Tailwind pink-500) — explicit so mobile browsers don’t paint buttons white */
+const TAB_PINK = '#ec4899';
+
 export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResume }: StartScreenProps) {
   const [showPassword, setShowPassword] = useState<false | 'new' | 'resume'>(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('sky');
 
   function handleEvaClick() {
     setShowPassword('new');
@@ -46,17 +52,68 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
     }
   }
 
+  const skyPanelHiddenMobile = mobileTab !== 'sky';
+  const sudokuPanelHiddenMobile = mobileTab !== 'sudoku';
+
   return (
-    <div className="min-h-screen w-full overflow-hidden flex flex-col md:flex-row select-none">
-      {/* Left panel — Sky View */}
-      <div className="md:w-[60%] bg-slate-50 flex items-center justify-center min-h-[50vh] md:min-h-screen p-4">
-        <div id="sky-container" className="w-full h-[92vh] bg-[#0f1535] rounded-2xl border border-slate-700/50 overflow-hidden p-6">
-          <SkyView />
-        </div>
+    <div className="min-h-[100dvh] w-full overflow-hidden flex flex-col md:flex-row md:min-h-screen select-none">
+      {/* Mobile: jump between Sky and Sudoku without scrolling the full page */}
+      <div
+        className="flex md:hidden shrink-0 w-full bg-slate-100 border-b border-slate-200 px-4 pb-3.5 pt-[calc(1rem+env(safe-area-inset-top,0.75rem))] gap-2.5"
+        role="tablist"
+        aria-label="Section"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileTab === 'sky'}
+          onClick={() => setMobileTab('sky')}
+          style={mobileTab === 'sky' ? { backgroundColor: TAB_PINK } : { backgroundColor: 'transparent' }}
+          className={`flex-1 appearance-none py-2.5 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400 ${
+            mobileTab === 'sky'
+              ? 'text-white shadow-md'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Sky
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileTab === 'sudoku'}
+          onClick={() => setMobileTab('sudoku')}
+          style={mobileTab === 'sudoku' ? { backgroundColor: TAB_PINK } : { backgroundColor: 'transparent' }}
+          className={`flex-1 appearance-none py-2.5 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400 ${
+            mobileTab === 'sudoku'
+              ? 'text-white shadow-md'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Sudoku
+        </button>
       </div>
 
-      {/* Right panel — Sudoku start */}
-      <div className="md:w-[40%] bg-slate-50 flex flex-col items-center justify-center px-4 py-12 md:py-0">
+      <div className="flex flex-1 flex-col md:flex-row min-h-0 overflow-hidden max-md:pt-3">
+        {/* Left panel — Sky View */}
+        <div
+          className={`md:w-[60%] bg-slate-50 flex flex-col min-h-0 flex-1 items-stretch justify-center p-4 md:min-h-screen md:items-center ${
+            skyPanelHiddenMobile ? 'hidden md:flex' : 'flex'
+          }`}
+        >
+          <div
+            id="sky-container"
+            className="w-full flex-1 min-h-[min(50vh,420px)] h-full max-h-[calc(100dvh-8rem)] md:max-h-none md:h-[92vh] md:flex-none md:min-h-0 bg-[#0f1535] rounded-2xl border border-slate-700/50 overflow-hidden p-6"
+          >
+            <SkyView />
+          </div>
+        </div>
+
+        {/* Right panel — Sudoku start */}
+        <div
+          className={`md:w-[40%] bg-slate-50 flex flex-col items-center justify-start md:justify-center px-4 py-8 md:py-0 overflow-y-auto min-h-0 ${
+            sudokuPanelHiddenMobile ? 'hidden md:flex' : 'flex'
+          }`}
+        >
         <div className="w-full max-w-xs flex flex-col items-center gap-8">
           {/* Title */}
           <div className="text-center">
@@ -186,6 +243,7 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
             </button>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
