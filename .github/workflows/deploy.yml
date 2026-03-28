@@ -26,6 +26,8 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+        env:
+          NEXT_PUBLIC_ASTRONOMY_API_AUTH: ${{ secrets.ASTRONOMY_API_AUTH }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
