@@ -118,9 +118,11 @@ Brightest      Naked eye      Telescopic
 ```
 
 Controls:
+- **Hour selector**: `8 PM` | `10 PM` | `12 AM` | `2 AM` — pill buttons, re-fetches API + recomputes stars
 - **Brightness slider**: 0% = mag -2 (only brightest), 100% = mag 6 (naked eye limit), 200% = mag 20 (telescopic)
+- **Object count**: shown below slider (`N objects · mag limit X.X`)
 - **Head diagram**: SVG showing person looking up at 45° towards mountain
-- **Object list**: Scrollable (max-h-32), sorted by magnitude, planets in amber
+- **Object list**: Scrollable (max-h-32), sorted by magnitude. Each entry tagged: *(brightest)*, *(naked eye)*, *(telescopic)*, or *(planet)* with color coding
 
 ## View Cone Model
 
@@ -257,13 +259,34 @@ const maxChartHeight = windowHeight * 0.92 - reservedHeight;
 const viewHeight = min(chartWidth * fov_v/fov_h, maxChartHeight);
 ```
 
+## Time Controls
+
+Four hour options: **8 PM**, **10 PM**, **12 AM**, **2 AM**
+
+```typescript
+const [hour, setHour] = useState(20); // 20, 22, 24, 26
+
+// Convert to API time string
+const timeString = hour >= 24 ? `${String(hour - 24).padStart(2, '0')}:00:00` : `${hour}:00:00`;
+
+// 12 AM and 2 AM use next day's date for API calls + star computation
+const isNextDay = hour >= 24;
+const date = isNextDay ? tomorrowString() : todayString();
+```
+
+When the hour changes:
+1. `fetchBodyPositions(date, timeString)` re-fetches planet positions from the API
+2. `computeSky(date, timeString, ...)` recomputes star alt/az positions via LST
+3. Date display updates (e.g. "Saturday, March 28" → "Sunday, March 29" for 12 AM / 2 AM)
+4. Stars shift across the sky as the Earth rotates through the night
+
 ## Constraints
 
 - **Static export**: GitHub Pages via `output: "export"`. All API calls client-side.
 - **Auth**: Pre-computed `base64(appId:secret)` in `NEXT_PUBLIC_ASTRONOMY_API_AUTH` env var.
 - **API**: Returns planets only (no stars). Stars computed locally from catalog + coordinate math.
 - **Fixed observer**: Eva's coordinates hardcoded in `EVA_LOCATION`.
-- **Fixed time**: 8 PM local (Monterrey, UTC-6).
+- **Selectable time**: 8 PM, 10 PM, 12 AM, 2 AM (Monterrey, UTC-6). 12 AM/2 AM use next day's date.
 - **Fixed facing**: SSE ~160° azimuth, 45° pitch.
 - **Star chart image endpoint**: Available (`POST /studio/star-chart`) but not used — too cluttered for our UI.
 

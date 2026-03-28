@@ -9,8 +9,15 @@ function todayString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function formatDate(): string {
+function tomorrowString(): string {
   const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatDate(nextDay = false): string {
+  const d = new Date();
+  if (nextDay) d.setDate(d.getDate() + 1);
   const day = d.toLocaleDateString('en-US', { weekday: 'long' });
   const month = d.toLocaleDateString('en-US', { month: 'long' });
   const date = d.getDate();
@@ -79,20 +86,21 @@ export default function SkyView() {
   const [brightnessRange, setBrightnessRange] = useState(100);
   const [hour, setHour] = useState(20); // 20=8PM, 22=10PM, 24=12AM
 
-  const timeString = hour === 24 ? '00:00:00' : `${hour}:00:00`;
-  const hourLabel = hour === 20 ? '8 PM' : hour === 22 ? '10 PM' : '12 AM';
+  const timeString = hour >= 24 ? `${String(hour - 24).padStart(2, '0')}:00:00` : `${hour}:00:00`;
+  const hourLabel = hour === 20 ? '8 PM' : hour === 22 ? '10 PM' : hour === 24 ? '12 AM' : '2 AM';
+  const isNextDay = hour >= 24;
 
   useEffect(() => {
-    const today = todayString();
+    const date = isNextDay ? tomorrowString() : todayString();
     setLoading(true);
 
-    fetchBodyPositions(today, timeString)
+    fetchBodyPositions(date, timeString)
       .then(setSky)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
     const result = computeSky(
-      today, timeString,
+      date, timeString,
       EVA_LOCATION.latitude, EVA_LOCATION.longitude,
       { ...EVA_VIEW, magnitude_limit: 20 }
     );
@@ -189,13 +197,13 @@ export default function SkyView() {
         Eva&apos;s Sky Tonight
       </h2>
       <p className="text-xs text-slate-400">
-        {formatDate()} &middot; {hourLabel} &middot; Monterrey
+        {formatDate(isNextDay)} &middot; {hourLabel} &middot; Monterrey
       </p>
 
       {/* Hour selector */}
       <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
-        {([20, 22, 24] as const).map((h) => {
-          const label = h === 20 ? '8 PM' : h === 22 ? '10 PM' : '12 AM';
+        {([20, 22, 24, 26] as const).map((h) => {
+          const label = h === 20 ? '8 PM' : h === 22 ? '10 PM' : h === 24 ? '12 AM' : '2 AM';
           return (
             <button
               key={h}
@@ -373,27 +381,30 @@ export default function SkyView() {
           </div>
 
           {/* Object list — scrollable */}
-          <div className="text-xs text-slate-400 space-y-1 w-full max-w-full max-h-32 overflow-y-auto pr-1">
-            {viewObjects
-              .sort((a, b) => a.magnitude - b.magnitude)
-              .map((obj) => {
-                const tag = obj.type === 'planet' ? 'planet'
-                  : obj.magnitude <= 0 ? 'brightest'
-                  : obj.magnitude <= 6 ? 'naked eye'
-                  : 'telescopic';
-                const tagColor = obj.type === 'planet' ? 'text-amber-300'
-                  : obj.magnitude <= 0 ? 'text-yellow-300'
-                  : obj.magnitude <= 6 ? 'text-slate-300'
-                  : 'text-indigo-400';
-                return (
-                  <div key={`${obj.type}-${obj.name}`} className="flex justify-between">
-                    <span className={tagColor}>
-                      {obj.name} <span className="text-[9px] opacity-60">({tag})</span>
-                    </span>
-                    <span>mag {obj.magnitude.toFixed(1)} &middot; {obj.altitude.toFixed(1)}°</span>
-                  </div>
-                );
-              })}
+          <div className="text-xs text-slate-400 w-full max-w-full max-h-32 overflow-y-auto pr-1">
+            <div className="space-y-1">
+              {viewObjects
+                .sort((a, b) => a.magnitude - b.magnitude)
+                .map((obj) => {
+                  const tag = obj.type === 'planet' ? 'planet'
+                    : obj.magnitude <= 0 ? 'brightest'
+                    : obj.magnitude <= 6 ? 'naked eye'
+                    : 'telescopic';
+                  const tagColor = obj.type === 'planet' ? 'text-amber-300'
+                    : obj.magnitude <= 0 ? 'text-yellow-300'
+                    : obj.magnitude <= 6 ? 'text-slate-300'
+                    : 'text-indigo-400';
+                  return (
+                    <div key={`${obj.type}-${obj.name}`} className="flex justify-between">
+                      <span className={tagColor}>
+                        {obj.name} <span className="text-[9px] opacity-60">({tag})</span>
+                      </span>
+                      <span>mag {obj.magnitude.toFixed(1)} &middot; {obj.altitude.toFixed(1)}°</span>
+                    </div>
+                  );
+                })}
+              <div className="h-8" />
+            </div>
           </div>
         </>
       )}
