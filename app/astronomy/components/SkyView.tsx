@@ -126,11 +126,11 @@ export default function SkyView() {
           <line x1={0} y1={size / 2} x2={size} y2={size / 2} stroke="#1E293B" strokeWidth={0.5} />
         </svg>
 
-        {/* Cardinal directions — rotated for SSE facing */}
-        <span className="absolute top-1 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">SSE</span>
-        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">NNW</span>
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">ENE</span>
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">WSW</span>
+        {/* Direction landmarks */}
+        <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-lg" title="Cerro de la Silla">&#x26F0;&#xFE0F;</span>
+        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-lg" title="Pizza">&#x1F355;</span>
+        <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">ENE</span>
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">WSW</span>
 
         {/* Celestial bodies */}
         {visibleBodies.map((body) => {
