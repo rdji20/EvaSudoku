@@ -87,3 +87,47 @@ export async function fetchBodyPositions(date: string): Promise<SkyData> {
     bodies,
   };
 }
+
+// RA/dec for the center of the sky looking SSE (157°) at ~50° altitude
+// from Eva's location at 8 PM. Computed from her lat/lon and local sidereal time.
+const SKY_CENTER_RA = 8.48;
+const SKY_CENTER_DEC = -11.65;
+
+export async function fetchStarChart(date: string): Promise<string> {
+  const auth = getAuthString();
+
+  const res = await fetch(`${API_BASE}/studio/star-chart`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      style: 'default',
+      observer: {
+        latitude: EVA_LOCATION.latitude,
+        longitude: EVA_LOCATION.longitude,
+        date,
+      },
+      view: {
+        type: 'area',
+        parameters: {
+          position: {
+            equatorial: {
+              rightAscension: SKY_CENTER_RA,
+              declination: SKY_CENTER_DEC,
+            },
+          },
+          zoom: 3,
+        },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Star chart API error: ${res.status} ${res.statusText}`);
+  }
+
+  const json = await res.json();
+  return json.data.imageUrl;
+}

@@ -2,28 +2,36 @@
 
 ## Purpose
 
-A sky show for Eva — renders the real night sky at 8 PM as seen from her special location (25.6445595, -100.3658494, Monterrey area), oriented in the direction she faces (SSE ~157°). Built as a gift feature inside the Sudoku app.
+A sky show for Eva — renders the real night sky at 8 PM as seen from her special location (25.6445595, -100.3658494, Monterrey area), oriented in the direction she faces (SSE ~160°). Built as a gift feature inside the Sudoku app.
 
 ## Project Structure
 
 ```
 lib/astronomy/
   api.ts              # Pure API logic (no React)
-                      #   - EVA_LOCATION, DEFAULT_TIME constants
+                      #   - EVA_LOCATION (lat/lon), DEFAULT_TIME constants
                       #   - BodyPosition, SkyData types
-                      #   - fetchBodyPositions(date) → SkyData
-  test.ts             # Manual test script (npx tsx lib/astronomy/test.ts)
+                      #   - fetchBodyPositions(date) → SkyData (planets from API)
+                      #   - fetchStarChart(date) → imageUrl (unused, kept for reference)
+  catalog.ts          # Star catalog — ~170 stars from mag -1.46 to mag 18+
+                      #   - Named bright stars (Sirius, Capella, etc.)
+                      #   - Naked-eye stars (mag < 6)
+                      #   - Telescopic stars (mag 6+, Barnard's Star, Wolf 359, etc.)
+  stars.ts            # View cone engine
+                      #   - ViewCone type (azimuth, altitude, FOV, mag limit)
+                      #   - EVA_VIEW constant (facing 160°, pitch 45°, 120°×80° FOV)
+                      #   - computeSky() → SkyResult with objects + ratios
+                      #   - Coordinate math: RA/Dec → Alt/Az via LST
+                      #   - In-view test: angular bounds check
+  test.ts             # Manual test: npx tsx lib/astronomy/test.ts
+  test-stars.ts       # Manual test: npx tsx lib/astronomy/test-stars.ts
 
 app/astronomy/
-  STATUS.md           # Progress tracker — what's done, what's next
+  STATUS.md           # Progress tracker
   ARCHITECTURE.md     # This file
   components/
-    SkyView.tsx       # Main sky rendering (SVG hemisphere projection)
-                      #   - Fetches sky data on mount
-                      #   - Renders circular sky map with planets
-                      #   - Oriented for SSE facing direction
-                      #   - Body list below the chart
-  hooks/              # State management (reserved for future use)
+    SkyView.tsx       # Main sky rendering component (two tabs)
+  hooks/              # Reserved for future use
 ```
 
 ## Layout
@@ -31,106 +39,181 @@ app/astronomy/
 The start screen uses a **two-panel layout**:
 
 ```
-┌──────────────────────┬──────────────────────┐
-│                      │                      │
-│   Left Panel         │   Right Panel        │
-│   (white bg)         │   (white bg)         │
-│                      │                      │
-│  ┌────────────────┐  │     Sudoku           │
-│  │                │  │     Title             │
-│  │  Dark rounded  │  │     Difficulty        │
-│  │  sky window    │  │     Player select     │
-│  │  (70% w/h)    │  │     Resume button     │
-│  │                │  │                      │
-│  └────────────────┘  │                      │
-│                      │                      │
-└──────────────────────┴──────────────────────┘
+┌──────────────────────────────┬────────────────────┐
+│                              │                    │
+│   Left Panel (60%)           │   Right Panel (40%)│
+│   bg-slate-50                │   bg-slate-50      │
+│                              │                    │
+│  ┌──────────────────────┐    │     Sudoku         │
+│  │  Dark sky container  │    │     Title           │
+│  │  bg-[#0f1535]        │    │     Difficulty      │
+│  │  rounded-2xl         │    │     Player select   │
+│  │  w-full, h-[92vh]    │    │     Resume button   │
+│  │  p-6, overflow-y     │    │                    │
+│  │                      │    │                    │
+│  │  ┌────────────────┐  │    │                    │
+│  │  │ SkyView fills  │  │    │                    │
+│  │  │ container via  │  │    │                    │
+│  │  │ ResizeObserver │  │    │                    │
+│  │  └────────────────┘  │    │                    │
+│  └──────────────────────┘    │                    │
+│                              │                    │
+└──────────────────────────────┴────────────────────┘
 ```
 
-- **Desktop (md+)**: Side by side, each 50% width
+- **Desktop (md+)**: Side by side, left 60%, right 40%
 - **Mobile**: Stacks vertically — sky on top, sudoku controls below
-- Sky view sits inside a **rounded dark window** (70% width, 70vh height) with subtle border
+- Dark container: `id="sky-container"`, fills left panel with p-4 margin
+- SkyView measures container via `ResizeObserver` on `#sky-container`
+- Chart sizes itself to fit: width = container - 48px padding, height = min(FOV ratio, available space after reserving ~400px for controls)
 
-## Data Flow
+## Two Tabs
+
+### Planets Tab — Hemisphere Projection
+
+Full-sky circular view showing planets from the Astronomy API.
 
 ```
-StartScreen mounts
-  → SkyView component mounts
-    → useEffect calls fetchBodyPositions(today)
-      → GET astronomyapi.com/api/v2/bodies/positions
-        (auth via NEXT_PUBLIC_ASTRONOMY_API_AUTH env var)
-      → Parse response into SkyData { bodies: BodyPosition[] }
-    → SVG renders visible bodies (altitude > 0) on circular projection
-      → Bodies positioned using hemisphere projection
-      → Rotated so SSE (157°) faces up
+        ⛰️ (mountain, facing SSE ~160°)
+       ╱                              ╲
+      │         · Jupiter              │
+      │                                │
+ WSW  │    · Moon        · Uranus      │  ENE
+      │                                │
+      │              · Venus           │
+       ╲                              ╱
+        🍕 (pizza, behind NNW)
 ```
 
-## Key Types
+- Circle: center = zenith (90° alt), edge = horizon (0° alt)
+- Azimuth rotated so facing direction (160°) is at top
+- No E/W mirror — left of facing = left on screen (consistent with Stars tab)
+- Direction landmarks: ⛰️ (mountain/Cerro de la Silla) at top, 🍕 (pizza) at bottom
+
+### Stars Tab — View Cone Window
+
+Rectangular view showing what you actually see looking forward and up.
+
+```
+        ⛰️ (mountain)
+┌─────────────────────────────────┐
+│                                 │
+│  · Moon        · Procyon        │
+│                                 │
+│  left ─ ─ ─ ─ ─ ─ ─ ─ ─ right │
+│                                 │
+│           · Sirius   · Mirzam  │
+│                                 │
+│      horizon                    │
+└─────────────────────────────────┘
+
+[───────── Brightness Slider ─────────]
+Brightest      Naked eye      Telescopic
+
+   ○╌╌╌45°──▲    Looking up at 45° pitch
+   │         │    FOV 120° × 80°
+───┴─────────┴──  18.8% of sky
+
+[Scrollable object list]
+```
+
+Controls:
+- **Brightness slider**: 0% = mag -2 (only brightest), 100% = mag 6 (naked eye limit), 200% = mag 20 (telescopic)
+- **Head diagram**: SVG showing person looking up at 45° towards mountain
+- **Object list**: Scrollable (max-h-32), sorted by magnitude, planets in amber
+
+## View Cone Model
+
+The clean way to define what the user sees:
+
+### Input Parameters (EVA_VIEW)
 
 ```typescript
-interface BodyPosition {
-  id: string;           // "moon", "venus", "jupiter", etc.
-  name: string;         // "Moon", "Venus", "Jupiter"
-  altitude: number;     // degrees above horizon (negative = hidden)
-  azimuth: number;      // degrees clockwise from north
-  constellation: string;// "Leo", "Gemini", etc.
-  magnitude?: number;   // brightness (lower = brighter)
-}
-
-interface SkyData {
-  date: string;
-  time: string;         // always "20:00:00"
-  observer: { latitude, longitude, elevation };
-  bodies: BodyPosition[];
+{
+  azimuth_deg: 160,        // compass direction facing (SSE towards mountain)
+  altitude_deg: 45,        // pitch (looking upward)
+  fov_horizontal_deg: 120, // horizontal field of view
+  fov_vertical_deg: 80,    // vertical field of view
+  magnitude_limit: 6.0     // default cutoff (adjustable via slider)
 }
 ```
 
-## Coordinate Mapping (altitude/azimuth → screen)
+### In-View Test
 
-The sky view uses a **hemisphere projection** rotated to match the observer's facing direction:
+A star at (alt, az) is in the view cone if:
 
-### Projection Math
+```
+|angleDiff(star.az, view.az)| <= fov_horizontal / 2
+|star.alt - view.alt| <= fov_vertical / 2
+```
+
+### View-Relative Coordinates
+
+For rendering, each object gets `(view_x, view_y)` in [-1, 1]:
 
 ```typescript
-const FACING_AZIMUTH = 157; // SSE
+view_x = angleDiff(obj.az, view.az) / (fov_h / 2)   // -1=left, +1=right
+view_y = (obj.alt - view.alt) / (fov_v / 2)          // -1=bottom, +1=top
+```
 
-function skyToXY(body, size) {
-  if (body.altitude <= 0) return null;
-  const radius = size / 2;
-  const r = radius * (1 - body.altitude / 90);  // 90° = center, 0° = edge
-  const angle = (-(body.azimuth - FACING_AZIMUTH) - 90) * Math.PI / 180;
-  return {
-    x: radius + r * Math.cos(angle),
-    y: radius + r * Math.sin(angle),
-  };
+Screen position:
+```typescript
+px = ((view_x + 1) / 2) * viewWidth     // left to right
+py = ((1 - view_y) / 2) * viewHeight    // top to bottom (Y flipped)
+```
+
+### Output Ratios
+
+```typescript
+{
+  view_vs_total_sky: 0.188,        // geometric: FOV solid angle / 4π
+  view_vs_above_horizon: 0.376,    // geometric: FOV solid angle / 2π
+  catalog_in_view: 0.28,           // stars in view / stars above horizon
+  catalog_above_horizon: 0.58      // stars above horizon / total catalog
 }
 ```
 
-### How it works
+## Coordinate Math
 
-- **Altitude** (0-90°): height above horizon → distance from center
-  - 90° (zenith) = center of circle
-  - 0° (horizon) = edge of circle
-- **Azimuth** (0-360°): compass direction → angle around circle
-  - Rotated by `FACING_AZIMUTH` so the facing direction is at the top
-  - Negated for "looking up" mirror (East appears on left, like a real star chart)
+### RA/Dec → Alt/Az Conversion
 
-### Cardinal directions on the chart
+Stars are cataloged in equatorial coordinates (RA/Dec). To render them for a specific observer/time:
 
-| Position | Direction | Azimuth |
-|----------|-----------|---------|
-| Top      | SSE       | 157°    |
-| Bottom   | NNW       | 337°    |
-| Left     | ENE       | 67°     |
-| Right    | WSW       | 247°    |
+1. **Compute LST** (Local Sidereal Time) from date, time, and longitude
+2. **Hour Angle** = LST - RA
+3. **Altitude** = arcsin(sin(dec)·sin(lat) + cos(dec)·cos(lat)·cos(HA))
+4. **Azimuth** = arccos((sin(dec) - sin(lat)·sin(alt)) / (cos(lat)·cos(alt)))
 
-### Observer orientation
+### Planets Tab Projection (hemisphere → circle)
 
-The compass at Eva's location points SSE (~150°-165°). This is the direction she faces when looking out. The sky chart is rotated so this direction is "forward" (top of the circle), matching what she'd see if she tilted her head back to look up.
+```typescript
+const angle = ((body.azimuth - FACING_AZIMUTH) - 90) * Math.PI / 180;
+const r = radius * (1 - body.altitude / 90);
+x = radius + r * cos(angle);
+y = radius + r * sin(angle);
+```
+
+No negation on azimuth — consistent with view cone (left of facing = left on screen).
+
+## Star Catalog
+
+`lib/astronomy/catalog.ts` — ~170 stars organized by magnitude:
+
+| Range | Count | Examples |
+|-------|-------|---------|
+| mag < 0 | 3 | Sirius (-1.46), Canopus (-0.74), Arcturus (-0.05) |
+| mag 0–1 | 12 | Vega, Capella, Rigel, Procyon, Betelgeuse |
+| mag 1–2 | 30 | Pollux, Regulus, Castor, Bellatrix, Orion's belt |
+| mag 2–3 | 35 | Polaris, Alphard, Mintaka, Denebola |
+| mag 3–4 | 30 | Albireo, Wasat, Arneb, Algorab |
+| mag 4–6 | 25 | Alcor, Acubens, Copernicus |
+| mag 6+ | ~25 | Barnard's Star (9.5), Wolf 359 (13.5), TRAPPIST-1 (18.8) |
+
+Telescopic stars (mag 6+) include famous nearby stars and exoplanet hosts that appear when the brightness slider is pushed past naked-eye range.
 
 ## Body Rendering
 
-Each visible body (altitude > 0) is rendered as a colored dot with a glow:
+### Planets (colored dots)
 
 | Body    | Color   | Size |
 |---------|---------|------|
@@ -144,25 +227,56 @@ Each visible body (altitude > 0) is rendered as a colored dot with a glow:
 | Mercury | #D3D3D3 | 6px  |
 | Pluto   | #A9A9A9 | 6px  |
 
+### Stars (white dots, sized by magnitude)
+
+| Magnitude | Dot size |
+|-----------|----------|
+| < -1     | 8px      |
+| -1 to 0  | 7px      |
+| 0 to 1   | 6px      |
+| 1 to 2   | 5px      |
+| 2 to 3   | 4px      |
+| 3 to 5   | 3.5px    |
+| 5+       | 3px      |
+
+All dots have a glow: `box-shadow: 0 0 ${size+4}px ${color}aa`
+
+## Responsive Sizing
+
+The chart dynamically sizes itself to fit the container:
+
+```typescript
+// Measure the dark container via ResizeObserver on #sky-container
+const chartWidth = containerWidth - 48;  // subtract p-6 padding
+
+// Reserve space for UI controls below the chart
+const reservedHeight = 400;  // title + tabs + slider + diagram + list + gaps
+const maxChartHeight = windowHeight * 0.92 - reservedHeight;
+
+// Chart fills available space, maintaining FOV aspect ratio
+const viewHeight = min(chartWidth * fov_v/fov_h, maxChartHeight);
+```
+
 ## Constraints
 
-- **Static export**: App deploys to GitHub Pages via `next build` with `output: "export"`. No server-side API routes — all API calls happen client-side.
-- **Auth**: Pre-computed `base64(appId:secret)` stored in `NEXT_PUBLIC_ASTRONOMY_API_AUTH` env var. Baked into the JS bundle at build time.
-- **API bodies available**: sun, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto (no individual stars — star chart image endpoint available for future use)
-- **Fixed observer**: Eva's coordinates (25.6445595, -100.3658494) hardcoded
-- **Fixed time**: 8 PM local (Monterrey timezone, UTC-6)
-- **Fixed facing**: SSE ~157° azimuth
+- **Static export**: GitHub Pages via `output: "export"`. All API calls client-side.
+- **Auth**: Pre-computed `base64(appId:secret)` in `NEXT_PUBLIC_ASTRONOMY_API_AUTH` env var.
+- **API**: Returns planets only (no stars). Stars computed locally from catalog + coordinate math.
+- **Fixed observer**: Eva's coordinates hardcoded in `EVA_LOCATION`.
+- **Fixed time**: 8 PM local (Monterrey, UTC-6).
+- **Fixed facing**: SSE ~160° azimuth, 45° pitch.
+- **Star chart image endpoint**: Available (`POST /studio/star-chart`) but not used — too cluttered for our UI.
 
 ## Integration with Main App
 
 - SkyView is rendered on the **StartScreen** (left panel), visible to all users
-- Two-panel layout on desktop, stacked on mobile
+- Two-panel layout: sky (60%) | sudoku controls (40%)
 - Game screen remains unchanged (centered single column)
 - Does not interfere with game state
 
 ## API Reference
 
-### Body Positions
+### Body Positions (planets)
 
 ```
 GET https://api.astronomyapi.com/api/v2/bodies/positions
@@ -174,12 +288,11 @@ Headers: Authorization: Basic <NEXT_PUBLIC_ASTRONOMY_API_AUTH>
 
 Returns per body: altitude, azimuth, RA/dec, constellation, distance, magnitude.
 
-### Star Chart Image (available, not yet integrated)
+### Star Chart Image (available, not used)
 
 ```
 POST https://api.astronomyapi.com/api/v2/studio/star-chart
 Body: { style, observer: { latitude, longitude, date }, view: { type, parameters } }
-Headers: Authorization: Basic <NEXT_PUBLIC_ASTRONOMY_API_AUTH>
 ```
 
-Returns `{ data: { imageUrl: "https://..." } }` — rendered PNG with stars and constellation lines.
+Returns `{ data: { imageUrl: "..." } }` — rendered PNG.

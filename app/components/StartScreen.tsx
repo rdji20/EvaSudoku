@@ -47,16 +47,16 @@ export default function StartScreen({ hasSavedGame, savedPlayer, onStart, onResu
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row select-none">
+    <div className="min-h-screen w-full overflow-hidden flex flex-col md:flex-row select-none">
       {/* Left panel — Sky View */}
-      <div className="md:w-1/2 bg-slate-50 flex items-center justify-center min-h-[50vh] md:min-h-screen">
-        <div className="w-[70%] h-[70vh] bg-[#0f1535] rounded-2xl border border-slate-700/50 flex items-center justify-center p-6 overflow-hidden">
+      <div className="md:w-[60%] bg-slate-50 flex items-center justify-center min-h-[50vh] md:min-h-screen p-4">
+        <div id="sky-container" className="w-full h-[92vh] bg-[#0f1535] rounded-2xl border border-slate-700/50 overflow-hidden p-6">
           <SkyView />
         </div>
       </div>
 
       {/* Right panel — Sudoku start */}
-      <div className="md:w-1/2 bg-slate-50 flex flex-col items-center justify-center px-4 py-12 md:py-0">
+      <div className="md:w-[40%] bg-slate-50 flex flex-col items-center justify-center px-4 py-12 md:py-0">
         <div className="w-full max-w-xs flex flex-col items-center gap-8">
           {/* Title */}
           <div className="text-center">
