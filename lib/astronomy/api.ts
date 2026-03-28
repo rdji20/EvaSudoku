@@ -39,7 +39,7 @@ function getAuthString(): string {
   return auth;
 }
 
-export async function fetchBodyPositions(date: string): Promise<SkyData> {
+export async function fetchBodyPositions(date: string, time: string = DEFAULT_TIME): Promise<SkyData> {
   const auth = getAuthString();
   const params = new URLSearchParams({
     latitude: String(EVA_LOCATION.latitude),
@@ -47,7 +47,7 @@ export async function fetchBodyPositions(date: string): Promise<SkyData> {
     elevation: String(EVA_LOCATION.elevation),
     from_date: date,
     to_date: date,
-    time: DEFAULT_TIME,
+    time,
   });
 
   const res = await fetch(`${API_BASE}/bodies/positions?${params}`, {

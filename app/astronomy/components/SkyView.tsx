@@ -76,23 +76,28 @@ export default function SkyView() {
   const [skyResult, setSkyResult] = useState<SkyResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [brightnessRange, setBrightnessRange] = useState(100); // 0=brightest, 100=naked eye, 200=telescopic
+  const [brightnessRange, setBrightnessRange] = useState(100);
+  const [hour, setHour] = useState(20); // 20=8PM, 22=10PM, 24=12AM
+
+  const timeString = hour === 24 ? '00:00:00' : `${hour}:00:00`;
+  const hourLabel = hour === 20 ? '8 PM' : hour === 22 ? '10 PM' : '12 AM';
 
   useEffect(() => {
     const today = todayString();
+    setLoading(true);
 
-    fetchBodyPositions(today)
+    fetchBodyPositions(today, timeString)
       .then(setSky)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
     const result = computeSky(
-      today, DEFAULT_TIME,
+      today, timeString,
       EVA_LOCATION.latitude, EVA_LOCATION.longitude,
-      { ...EVA_VIEW, magnitude_limit: 20 } // compute all stars, slider filters
+      { ...EVA_VIEW, magnitude_limit: 20 }
     );
     setSkyResult(result);
-  }, []);
+  }, [hour]);
 
   // Magnitude limit: 0% = mag -2 (brightest), 100% = mag 6 (naked eye limit), 200% = mag 20 (telescopic)
   const magLimit = brightnessRange <= 100
@@ -184,8 +189,28 @@ export default function SkyView() {
         Eva&apos;s Sky Tonight
       </h2>
       <p className="text-xs text-slate-400">
-        {formatDate()} &middot; 8:00 PM &middot; Monterrey
+        {formatDate()} &middot; {hourLabel} &middot; Monterrey
       </p>
+
+      {/* Hour selector */}
+      <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
+        {([20, 22, 24] as const).map((h) => {
+          const label = h === 20 ? '8 PM' : h === 22 ? '10 PM' : '12 AM';
+          return (
+            <button
+              key={h}
+              onClick={() => setHour(h)}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                hour === h
+                  ? 'bg-slate-700 text-slate-200'
+                  : 'text-slate-400 hover:text-slate-300'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
