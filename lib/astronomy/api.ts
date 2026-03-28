@@ -1,8 +1,8 @@
 // Astronomy API — client-side (static export, no server routes)
 
 export const EVA_LOCATION = {
-  latitude: 25.6451304,
-  longitude: -100.3680458,
+  latitude: 25.6445595,
+  longitude: -100.3658494,
   elevation: 0,
 } as const;
 

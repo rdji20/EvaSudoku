@@ -8,13 +8,18 @@ function todayString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// Facing direction: SSE ≈ 157° azimuth
+const FACING_AZIMUTH = 157;
+
 // Map altitude/azimuth to x,y on a circular projection
 // Center = zenith (90°), edge = horizon (0°)
+// Rotated so the facing direction (SSE) is at the top
 function skyToXY(body: BodyPosition, size: number): { x: number; y: number } | null {
   if (body.altitude <= 0) return null; // below horizon
   const radius = size / 2;
   const r = radius * (1 - body.altitude / 90); // 90° = center, 0° = edge
-  const angle = ((body.azimuth - 90) * Math.PI) / 180; // rotate so 0°(N) is up
+  // Rotate so facing direction is up, mirror for looking-up convention
+  const angle = (-(body.azimuth - FACING_AZIMUTH) - 90) * Math.PI / 180;
   return {
     x: radius + r * Math.cos(angle),
     y: radius + r * Math.sin(angle),
@@ -121,11 +126,11 @@ export default function SkyView() {
           <line x1={0} y1={size / 2} x2={size} y2={size / 2} stroke="#1E293B" strokeWidth={0.5} />
         </svg>
 
-        {/* Cardinal directions */}
-        <span className="absolute top-1 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">N</span>
-        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">S</span>
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">W</span>
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">E</span>
+        {/* Cardinal directions — rotated for SSE facing */}
+        <span className="absolute top-1 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">SSE</span>
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">NNW</span>
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">ENE</span>
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">WSW</span>
 
         {/* Celestial bodies */}
         {visibleBodies.map((body) => {
