@@ -258,8 +258,8 @@ export default function SkyView() {
 
             <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-lg" title="Cerro de la Silla">&#x26F0;&#xFE0F;</span>
             <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-lg" title="Pizza">&#x1F355;</span>
-            <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">WSW</span>
-            <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">ENE</span>
+            <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">ENE</span>
+            <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">WSW</span>
 
             {visibleBodies.map((body) => {
               const pos = skyToXY(body, size);

@@ -78,7 +78,7 @@ Full-sky circular view showing planets from the Astronomy API.
        ╱                              ╲
       │         · Jupiter              │
       │                                │
- WSW  │    · Moon        · Uranus      │  ENE
+ ENE  │    · Moon        · Uranus      │  WSW
       │                                │
       │              · Venus           │
        ╲                              ╱
